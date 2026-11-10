@@ -159,6 +159,10 @@ export default function Landing() {
 </div>
 <p>{concept.description}</p>
 </div>
+<figure className="concept-product">
+<img src={basePath + "/images/" + concept.productImage} alt={concept.productAlt} width="1448" height="1086" loading="lazy" />
+<figcaption>Product concept · The Cypress Clue</figcaption>
+</figure>
 <div className="journey">
 {concept.steps.map((step, index) => <article key={step.title}>
 <div className="step-title"><span>{String(index + 1).padStart(2, '0')}</span><h3>{step.title}</h3></div>

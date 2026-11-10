@@ -1,10 +1,12 @@
 import type {Variant} from './experiment';
 export const concepts: Record<Variant, {
-  image: string; alt: string; lede: string; title: string; description: string;
+  image: string; alt: string; productImage: string; productAlt: string; lede: string; title: string; description: string;
   steps: {title: string; text: string}[]; equipment: string; pilot: string;
 }> = {
   worksheet: {
     image: 'worksheet.png',
+    productImage: 'worksheet-product.png',
+    productAlt: 'Printed Cypress Clue worksheet on a clipboard, with a pencil and headphones for the audio guide.',
     alt: 'Visitors examining The Starry Night and recording discoveries on printed clue worksheets.',
     lede: 'Turn a museum visit into a discovery worth sharing. A printed worksheet and audio guide invite you to listen, look closely, and follow clues in the art.',
     title: 'Listen. Look. Discover.',
@@ -19,6 +21,8 @@ export const concepts: Record<Variant, {
   },
   mobile: {
     image: 'mobile.png',
+    productImage: 'mobile-product.png',
+    productAlt: 'Mobile phone showing The Cypress Clue role-playing challenge, with artwork details and multiple-choice answers.',
     alt: 'Visitors playing a museum role-playing adventure on their mobile phones in front of The Starry Night.',
     lede: 'Turn a museum visit into a story worth following. A role-playing adventure on your mobile phone starts with a character—and brings you back to the art.',
     title: 'Play a part. Look closer.',
@@ -33,6 +37,8 @@ export const concepts: Record<Variant, {
   },
   device: {
     image: 'device.png',
+    productImage: 'device-product.png',
+    productAlt: 'Dedicated museum role-playing device showing The Cypress Clue, with three physical buttons, wired earphones, and a wrist strap.',
     alt: 'Visitors playing a museum role-playing adventure on dedicated handheld devices with buttons and headphones in front of The Starry Night.',
     lede: 'Turn a museum visit into a story worth following. A role-playing adventure on a dedicated handheld device starts with a character—and brings you back to the art.',
     title: 'Play a part. Look closer.',

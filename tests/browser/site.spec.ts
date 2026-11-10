@@ -18,9 +18,15 @@ for (const variant of ['worksheet', 'mobile', 'device']) {
     page.on('request', request => { if (request.resourceType() === 'image') images.push(request.url()); });
     await page.goto('./?internal=1');
     await expect(page.locator('.concept-hero img')).toHaveAttribute('src', new RegExp(`/images/${variant}.png$`));
+    const product = page.locator('.concept-product img');
+    await expect(product).toHaveAttribute('src', new RegExp(`/images/${variant}-product.png$`));
+    await product.scrollIntoViewIfNeeded();
+    await expect.poll(() => product.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     for (const other of ['worksheet', 'mobile', 'device'].filter(value => value !== variant)) {
       await expect(page.locator(`img[src$="/${other}.png"]`)).toHaveCount(0);
       expect(images.some(url => url.endsWith(`/${other}.png`))).toBe(false);
+      await expect(page.locator(`img[src$="/${other}-product.png"]`)).toHaveCount(0);
+      expect(images.some(url => url.endsWith(`/${other}-product.png`))).toBe(false);
     }
     await expect(page.locator('img[src$="/explore.png"], img[src$="/welcome.png"], #preference')).toHaveCount(0);
     const content = await page.locator('.landing').textContent();
