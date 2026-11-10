@@ -24,10 +24,10 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.e
    ```sh
    supabase login
    supabase link --project-ref YOUR_PROJECT_REF
-   supabase db push
+   supabase db push --remote
    supabase secrets set ALLOWED_ORIGINS=https://YOUR_OWNER.github.io,http://127.0.0.1:3000,http://127.0.0.1:4173
    supabase secrets set RATE_LIMIT_SALT=YOUR_LONG_RANDOM_SECRET
-   supabase functions deploy collect --no-verify-jwt
+   supabase functions deploy collect --no-verify-jwt --use-api
    ```
 
    Origins have no repository path. Remove development origins after testing. Generate the salt with a password manager. Supabase supplies server credentials to the function; never copy them into frontend files. Public collection intentionally requires no visitor login. Validation, a honeypot, bounded bodies, atomic rate limits, and database grants constrain writes. CORS is not authentication. Verify trusted proxy headers on the deployed platform; browser counts are approximate and not bot-proof.
@@ -100,3 +100,5 @@ Routes are defined in `app/page.tsx` and `app/dashboard/page.tsx`; React interac
 For existing deployments, GitHub Actions accepts the old `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` repository variables as fallbacks. New `NEXT_PUBLIC_*` variables take precedence. Local `.env` files must use the new names. Never store service-role keys in either set of public variables.
 
 Hosting policy: GitHub Pages has restrictions on commercial hosting and sensitive transactions, including password submission. Next.js static export does not change those terms. Confirm your intended use is eligible before publishing the password-based dashboard; its database authorization remains enforced by Supabase.
+
+If the initial migration previously failed near `day`, update to the corrected migration and rerun `npx supabase db push --remote`. The initial migration now permits retrying creation of its existing tables, indexes, functions, and outreach policy without deleting stored records. Do not reset the database or mark the failed migration as applied.
