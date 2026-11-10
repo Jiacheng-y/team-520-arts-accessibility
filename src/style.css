@@ -5,4 +5,4 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 
 /* Keep the landing page in its desktop composition at every viewport. */
-body.landing{min-width:1200px}
+.landing{min-width:1200px}

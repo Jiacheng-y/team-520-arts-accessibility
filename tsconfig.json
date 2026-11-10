@@ -1,1 +1,21 @@
-{"compilerOptions":{"target":"ES2022","lib":["ES2022","DOM","DOM.Iterable"],"module":"ESNext","moduleResolution":"Bundler","strict":true,"skipLibCheck":true,"noEmit":true,"allowImportingTsExtensions":true,"types":["vite/client","node"]},"include":["src","tests","vite.config.ts","playwright.config.ts","supabase/functions/_shared/validation.ts"]}
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [{"name":"next"}]
+  },
+  "include": ["next-env.d.ts", "app/**/*.tsx", "components/**/*.tsx", "src/**/*.ts", "tests/**/*.ts", "playwright.config.ts", "next.config.mjs", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "supabase/functions/_shared/validation.ts"],
+  "exclude": ["node_modules"]
+}
