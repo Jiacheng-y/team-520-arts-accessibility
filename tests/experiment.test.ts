@@ -20,3 +20,26 @@ test('blocked storage still permits a valid assignment', () => {
   const storage = {getItem: () => {throw Error('blocked');}, setItem: () => {throw Error('blocked');}};
   assert.equal(assignVariant(storage, () => 0), 'worksheet');
 });
+
+test('displayed direct assignments are attributed without overwriting saved random assignments', async () => {
+  const entries = new Map([['btf:product-format-v1', 'worksheet'], ['btf:museum-pricing-v1', 'inquiry']]);
+  Object.defineProperty(globalThis, 'localStorage', {configurable: true, value: {
+    getItem: (key: string) => entries.get(key) ?? null,
+    setItem: (key: string, value: string) => entries.set(key, value),
+  }});
+  const location = {pathname: ''};
+  Object.defineProperty(globalThis, 'location', {configurable: true, value: location});
+  try {
+    const {experimentAttribution} = await import('../src/experiment.ts');
+    for (const variant of ['mobile', 'device']) for (const pricing_variant of ['inquiry', 'pilot']) {
+      location.pathname = `/museums/${variant}/${pricing_variant}/`;
+      assert.deepEqual(experimentAttribution(), {experiment: 'product-format-v1', variant, pricing_experiment: 'museum-pricing-v1', pricing_variant});
+    }
+    location.pathname = '/';
+    assert.deepEqual(experimentAttribution(), {experiment: 'product-format-v1', variant: 'worksheet'});
+    assert.equal(entries.get('btf:museum-pricing-v1'), 'inquiry');
+  } finally {
+    Reflect.deleteProperty(globalThis, 'localStorage');
+    Reflect.deleteProperty(globalThis, 'location');
+  }
+});

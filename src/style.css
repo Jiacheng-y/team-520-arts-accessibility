@@ -16,3 +16,8 @@
 .concept-product{margin:0 auto 44px;max-width:850px}
 .concept-product img{width:100%;height:auto;border-radius:8px}
 .concept-product figcaption{margin-top:12px;text-align:center;font-size:11px;color:var(--muted)}
+
+/* Keep offer placement identical in both pricing treatments. */
+.museum-offer { border-left: 3px solid #b96940; padding: 4px 0 4px 20px; margin: 24px 0; }
+.museum-offer h2 { font-size: 28px; line-height: 1.2; margin: 10px 0; }
+.museum-offer p:last-child { font-size: 15px; line-height: 1.6; margin-bottom: 0; }

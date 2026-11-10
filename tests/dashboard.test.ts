@@ -23,3 +23,19 @@ test('unavailable experiment metrics are not presented as zero results', () => {
  assert.match(html,/Experiment metrics unavailable/);
  assert.doesNotMatch(html,/13 signups without/);
 });
+
+test('pricing comparison separates offers and uses matched museum conversions', async () => {
+ const {PricingResults} = await import('../components/pricing-results.tsx');
+ const html = renderToStaticMarkup(createElement(PricingResults, {results: [
+  {variant:'mobile',pricing_variant:'inquiry',visitors:10,museums:8,paid:2,converted:3},
+  {variant:'device',pricing_variant:'pilot',visitors:0,museums:2,paid:1,converted:0},
+ ]}));
+ assert.match(html,/30\.0% \(3\/10\)/);
+ assert.doesNotMatch(html,/80\.0%|Infinity|NaN/);
+ assert.match(html,/A · Collaboration/);
+ assert.match(html,/B · \$1,000 \/ 30 days/);
+ assert.match(html,/Museum handheld RPG/);
+ const unavailable = renderToStaticMarkup(createElement(PricingResults));
+ assert.match(unavailable,/Pricing metrics unavailable/);
+ assert.doesNotMatch(unavailable,/<tbody>/);
+});

@@ -58,3 +58,50 @@ test('initial static HTML does not expose any concept before assignment', async 
   expect(html).not.toMatch(/images\/(worksheet|mobile|device|explore|welcome)\.png/);
   expect(html).not.toContain('phone-based adventure');
 });
+
+for (const concept of ['mobile', 'device']) for (const offer of ['inquiry', 'pilot']) {
+  test(`${concept} ${offer} museum landing displays the matching offer and requires museum details`, async ({page}) => {
+    // Explicit outreach links must override conflicting stored assignments.
+    await page.addInitScript(() => {
+      localStorage.setItem('btf:product-format-v1', 'worksheet');
+      localStorage.setItem('btf:museum-pricing-v1', 'inquiry');
+    });
+    await page.goto(`museums/${concept}/${offer}/?internal=1`);
+    await expect(page.locator('.concept-hero img')).toHaveAttribute('src', new RegExp(`/images/${concept}.png$`));
+    await expect(page.locator('.museum-offer')).toContainText(offer === 'pilot' ? '$1,000 for a 30-day exhibition pilot' : 'receive a quotation');
+    if (offer === 'inquiry') await expect(page.locator('.landing')).not.toContainText('$1,000');
+    await expect(page.locator('#organization')).toHaveAttribute('required', '');
+    await expect(page.locator('#job-role')).toHaveAttribute('required', '');
+    await expect(page.locator('#signup-form button[type=submit]')).toContainText(offer === 'pilot' ? '$1,000' : 'quotation');
+    await page.locator('#email').fill('museum@example.org');
+    await page.locator('#organization').fill('Test museum');
+    await page.locator('#job-role').fill('Curator');
+    await page.locator('[name=consent]').check();
+    await page.locator('#signup-form button[type=submit]').click();
+    await expect(page.locator('#signup-status')).toContainText('not open yet');
+    await expect(page.locator('#thank-you')).toBeHidden();
+    await page.reload();
+    await expect(page.locator('.museum-offer')).toContainText(offer === 'pilot' ? '$1,000' : 'quotation');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({path: `test-results/pricing-${concept}-${offer}.png`, fullPage: true});
+  });
+}
+test('root pricing is persistent and worksheet stays outside the test', async ({page}) => {
+  await page.addInitScript(() => localStorage.setItem('btf:product-format-v1', 'mobile'));
+  await page.goto('./?internal=1');
+  await expect(page.locator('.museum-offer')).toBeVisible();
+  const offer = await page.locator('.museum-offer').textContent();
+  await page.reload();
+  await expect(page.locator('.museum-offer')).toHaveText(offer!);
+  await page.goto('museums/device/pilot/?internal=1');
+  await expect(page.locator('.museum-offer')).toContainText('$1,000');
+  await page.goto('./?internal=1');
+  await expect(page.locator('.museum-offer')).toHaveText(offer!);
+});
+test('worksheet does not show or assign a pricing offer', async ({page}) => {
+  await page.addInitScript(() => localStorage.setItem('btf:product-format-v1', 'worksheet'));
+  await page.goto('./?internal=1');
+  await expect(page.locator('.concept-hero img')).toBeVisible();
+  await expect(page.locator('.museum-offer')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('btf:museum-pricing-v1'))).toBeNull();
+});
