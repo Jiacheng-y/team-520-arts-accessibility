@@ -6,3 +6,7 @@ dist/
 playwright-report/
 test-results/
 .superpowers/
+.next/
+out/
+*.tsbuildinfo
+supabase/.temp/

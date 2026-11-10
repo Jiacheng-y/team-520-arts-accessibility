@@ -34,6 +34,11 @@ set local role authenticated;
 do $$ declare metrics jsonb; begin
  metrics:=public.dashboard_metrics(null,null,'sql_test_unique');
  if (metrics->>'visitors')::int<>1 or (metrics->>'signups')::int<>1 or (metrics->>'converted')::int<>1 then raise exception 'Bad aggregates: %',metrics; end if;
+ if jsonb_array_length(metrics->'trend')<>1
+    or metrics->'trend'->0->>'day' <> (now() at time zone 'UTC')::date::text
+    or (metrics->'trend'->0->>'count')::int<>1 then
+   raise exception 'Bad trend response: %',metrics->'trend';
+ end if;
 end $$;
 reset role;
 select public.delete_signup_by_receipt('test-hash');
