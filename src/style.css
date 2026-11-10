@@ -6,3 +6,9 @@
 
 /* Keep the landing page in its desktop composition at every viewport. */
 .landing{min-width:1200px}
+
+/* Each assignment uses the same image treatment and page hierarchy. */
+.concept-hero{position:relative;z-index:1;width:100%;overflow:hidden;border-radius:8px;box-shadow:0 18px 50px #14282025}
+.concept-hero img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.concept-museum{height:500px;padding:0;display:flex;align-items:center}
+.concept-museum img{width:100%;border-radius:0;transform:none;box-shadow:none}
