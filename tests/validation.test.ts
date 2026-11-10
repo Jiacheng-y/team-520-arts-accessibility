@@ -9,3 +9,15 @@ test('rejects unknown actions, oversized attribution and injected audience', () 
 test('visits require UUIDs; ignores client timestamps', () => { assert.throws(() => parseSubmission({ kind: 'visit', event_id: 'bad', visitor_id: 'bad' })); const v = parseSubmission({ kind: 'visit', event_id: '123e4567-e89b-42d3-a456-426614174000', visitor_id: '123e4567-e89b-42d3-a456-426614174001', created_at: '2000-01-01' }); assert.equal('created_at' in v, false); });
 test('qualification requires an unguessable signup receipt', () => { assert.throws(() => parseSubmission({ kind: 'qualify', receipt: 'abc', challenge: 'high', preference: 'layer', paid_pilot: 'yes' })); });
 test('signup preserves the same private receipt across retries and rejects missing receipts', () => { const first = parseSubmission(valid); const retry = parseSubmission(valid); assert.equal(first.receipt, valid.receipt); assert.equal(retry.receipt, first.receipt); assert.throws(() => parseSubmission({ ...valid, receipt: undefined })); });
+test('experiment attribution survives signup validation and rejects invented variants', () => {
+  for (const variant of ['worksheet', 'mobile', 'device']) {
+    assert.equal(parseSubmission({...valid, experiment: 'product-format-v1', variant}).variant, variant);
+  }
+  assert.throws(() => parseSubmission({...valid, experiment: 'product-format-v1', variant: 'invented'}));
+  assert.throws(() => parseSubmission({...valid, variant: 'mobile'}));
+});
+test('experiment qualification asks interest in the assigned concept without comparing formats', () => {
+  const response = {kind: 'qualify', receipt: valid.receipt, challenge: 'high', interest: 'very', paid_pilot: 'yes'};
+  assert.equal(parseSubmission(response).interest, 'very');
+  assert.throws(() => parseSubmission({...response, interest: 'invalid'}));
+});

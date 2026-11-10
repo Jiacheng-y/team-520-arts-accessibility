@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
         if (!permitted)
             return respond({ error: 'Rate limited' }, 429);
         if (data.kind === 'visit') {
-            const { error } = await db.from('analytics_events').upsert({ id: data.event_id, visitor_id: data.visitor_id, attribution: data.attribution }, { onConflict: 'id', ignoreDuplicates: true });
+            const { error } = await db.from('analytics_events').upsert({ id: data.event_id, visitor_id: data.visitor_id, attribution: data.attribution, experiment: data.experiment ?? null, variant: data.variant ?? null }, { onConflict: 'id', ignoreDuplicates: true });
             if (error)
                 throw error;
             return respond({ ok: true });
@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
             if (data.website)
                 return respond({ ok: true, receipt });
             // Retries reuse the same client receipt. A different submission cannot replace an existing receipt.
-            const { error } = await db.from('waitlist_signups').upsert({ email: data.email, audience: data.audience, organization: data.organization, role: data.role, visitor_id: data.visitor_id, attribution: data.attribution, receipt_hash: await hash(receipt), consent_version: '2026-11-09' }, { onConflict: 'email', ignoreDuplicates: true });
+            const { error } = await db.from('waitlist_signups').upsert({ email: data.email, audience: data.audience, organization: data.organization, role: data.role, visitor_id: data.visitor_id, attribution: data.attribution, experiment: data.experiment ?? null, variant: data.variant ?? null, receipt_hash: await hash(receipt), consent_version: '2026-11-09' }, { onConflict: 'email', ignoreDuplicates: true });
             if (error)
                 throw error;
             return respond({ ok: true, receipt });
@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
         if (lookupError)
             throw lookupError;
         if (signup) {
-            const { error } = await db.from('qualification_responses').upsert({ signup_id: signup.id, challenge: data.challenge, preference: data.preference, paid_pilot: data.paid_pilot, budget: data.budget }, { onConflict: 'signup_id' });
+            const { error } = await db.from('qualification_responses').upsert({ signup_id: signup.id, challenge: data.challenge, preference: data.preference ?? null, interest: data.interest ?? null, paid_pilot: data.paid_pilot, budget: data.budget }, { onConflict: 'signup_id' });
             if (error)
                 throw error;
         }

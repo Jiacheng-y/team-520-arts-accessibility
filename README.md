@@ -102,3 +102,26 @@ For existing deployments, GitHub Actions accepts the old `VITE_SUPABASE_URL` and
 Hosting policy: GitHub Pages has restrictions on commercial hosting and sensitive transactions, including password submission. Next.js static export does not change those terms. Confirm your intended use is eligible before publishing the password-based dashboard; its database authorization remains enforced by Supabase.
 
 If the initial migration previously failed near `day`, update to the corrected migration and rerun `npx supabase db push --remote`. The initial migration now permits retrying creation of its existing tables, indexes, functions, and outreach policy without deleting stored records. Do not reset the database or mark the failed migration as applied.
+
+## Three-concept landing experiment
+
+`product-format-v1` assigns each new browser with equal probability to:
+
+- `worksheet`: supplied `a.png`, worksheet + audio guide.
+- `mobile`: supplied `b.png`, role-playing on visitors’ mobile phones.
+- `device`: supplied `c.png`, role-playing on dedicated museum handhelds.
+
+The assignment persists in `localStorage` under `btf:product-format-v1`. Reloading does not reroll. Cleared storage, private browsing, and different devices can produce a new assignment; blocked storage keeps the choice only for the current page. Equal probability does not guarantee exactly equal sample sizes. The initial HTML is a neutral loading shell; JavaScript must run before any product is shown. Only the selected concept's images and copy render, including FAQs and the museum follow-up form. There is no public switcher. As a static site, this is presentation isolation, not secrecy from someone inspecting the downloadable JavaScript or asset files.
+
+Consent remains required for visit analytics. Assignment is a display preference independent of analytics consent. A signup saves the assigned experiment and concept even when analytics is declined. Existing duplicate-email protection preserves the first signup and its original concept. Historical data stays unassigned, never backfilled into this experiment.
+
+The dashboard's **Interest by concept** table separates museum staff, visitors, educators, and other signups; it also reports very interested museums, paid-pilot interest, tracked browsers, and matching tracked conversion. Conversion requires the same browser, experiment, concept, date range, and campaign in visit and signup records. Do not divide all signups by consented visitors. Audience is only collected at signup, so these are audience signup counts, not audience-specific conversion rates. This measures expressed interest, not actual museum implementation or on-site engagement.
+
+### Rollout
+
+1. Apply `supabase/migrations/202611090002_product_experiment.sql` after the initial migration. Existing records and permissions are preserved.
+2. Deploy the updated `collect` Edge Function. It accepts both legacy and experiment payloads for compatibility.
+3. Build and deploy the landing page/dashboard together.
+4. Run `supabase/tests/security.sql` and `supabase/tests/experiment.sql` against a test project, then smoke-test one consented visit and signup for each concept.
+
+For local QA, set `localStorage.setItem('btf:product-format-v1', 'worksheet')` (or `mobile` / `device`) in browser developer tools and reload `?internal=1`. This suppresses analytics visits, not signup submissions; use a test backend. Remove that storage key to test random assignment. There are no variant URLs for ordinary visitors to discover.

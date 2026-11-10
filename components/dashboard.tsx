@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase, errorMessage } from '../src/client';
 
+import { ExperimentResults, type ExperimentResult } from './experiment-results';
+
 type Metrics = {
+  experiments?: ExperimentResult[];
   signups: number; visitors: number; museums: number; paid: number; converted: number; unattributed: number;
   audiences: Record<string, number>; preferences: Record<string, number>;
   trend: {day: string; count: number}[]; outreach: Record<string, number>;
@@ -11,7 +14,6 @@ type Metrics = {
 type Filters = {date_from: string | null; date_to: string | null; campaign_filter: string | null};
 const emptyFilters: Filters = {date_from: null, date_to: null, campaign_filter: null};
 const audienceLabels = {museum: 'Museum staff', educator: 'Educators', visitor: 'Visitors', other: 'Other'};
-const preferenceLabels = {layer: 'Role-playing layer', audio: 'Audio guide', both: 'Both', unsure: 'Unsure'};
 function Breakdown({values, labels}: {values: Record<string, number>; labels: Record<string, string>}) {
   return Object.keys(values).length ? <>{Object.entries(values).map(([key, count]) => <div className="breakdown-row" key={key}><span>{labels[key] || key}</span><strong>{count}</strong></div>)}</> : <>No responses yet.</>;
 }
@@ -180,6 +182,9 @@ export default function Dashboard() {
 <button className="button small" type="submit">Apply filters</button>
 </form>
 <p id="metrics-status" role="status" className="status">{metricsStatus}</p>
+<ExperimentResults results={metrics?.experiments} totalSignups={metrics?.signups ?? 0} />
+<h2 className="overall-heading">Overall results</h2>
+<p className="muted">All signups and tracked visits for the selected filters, including earlier traffic without an assigned concept.</p>
 <div className="metric-grid">
 <article>
 <p>Waitlist emails</p>
@@ -216,14 +221,6 @@ export default function Dashboard() {
 <div id="audiences" className="breakdown">
 <Breakdown values={metrics?.audiences || {}} labels={audienceLabels} />
 </div>
-</article>
-<article className="data-card">
-<p className="eyebrow">WHAT MUSEUMS PREFER</p>
-<h2>A layer or a guide?</h2>
-<div id="preferences" className="breakdown">
-<Breakdown values={metrics?.preferences || {}} labels={preferenceLabels} />
-</div>
-<p className="muted">Optional museum responses only. Interest does not demonstrate purchasing commitment.</p>
 </article>
 <article className="data-card">
 <p className="eyebrow">WAITLIST MOMENTUM</p>

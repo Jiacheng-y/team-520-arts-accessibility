@@ -1,3 +1,4 @@
+import { experimentAttribution } from './experiment';
 import { collect } from './client';
 const prefix = 'btf:';
 export function read(key: string): string | null { try {
@@ -54,7 +55,7 @@ export async function trackVisit() {
     if (!read('attribution'))
         write('attribution', JSON.stringify(attribution()));
     try {
-        await collect({ kind: 'visit', visitor_id: id, event_id: eventId, attribution: firstAttribution() });
+        await collect({ kind: 'visit', visitor_id: id, event_id: eventId, attribution: firstAttribution(), ...experimentAttribution() });
         sent = true;
     }
     catch { /* Analytics must never interrupt signup. */ }

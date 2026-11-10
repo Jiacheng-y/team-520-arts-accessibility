@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { collect, errorMessage } from '../src/client';
 import { read, consent, visitorId, firstAttribution, trackVisit } from '../src/analytics';
 
+import { assignedVariant, experimentAttribution, type Variant } from '../src/experiment';
+import { concepts } from '../src/concepts';
+
 const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
 const stories: Record<string, string> = {
   detective: 'Your mission: a letter is missing its final line. Can an empty balance help you find the answer?',
@@ -13,6 +16,7 @@ const stories: Record<string, string> = {
 };
 
 export default function Landing() {
+  const [variant, setVariant] = useState<Variant | null>(null);
   const [ready, setReady] = useState(false);
   const [audience, setAudience] = useState('museum');
   const [role, setRole] = useState('detective');
@@ -31,6 +35,7 @@ export default function Landing() {
   const challenge = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
+    setVariant(assignedVariant());
     setReady(true);
     setYear(String(new Date().getFullYear()));
     setBanner(read('analytics') === null && new URLSearchParams(location.search).get('internal') !== '1');
@@ -57,7 +62,7 @@ export default function Landing() {
       const result = await collect({kind: 'signup', receipt: signupReceipts.current.get(email), email,
         audience, organization: data.get('organization') || '', role: data.get('role') || '',
         consent: data.get('consent') === 'on', website: data.get('website') || '',
-        visitor_id: visitorId(), attribution: firstAttribution()});
+        visitor_id: visitorId(), attribution: firstAttribution(), ...experimentAttribution()});
       setReceipt(result.receipt || '');
       setStatus('');
       setStage(audience === 'museum' && result.receipt ? 'qualify' : 'done');
@@ -85,6 +90,8 @@ export default function Landing() {
     } catch (error) { setDeleteStatus(errorMessage(error)); }
     finally { setDeleting(false); }
   }
+  if (!variant) return <div className="landing"><p className="wrap" role="status">Loading your experience…</p><noscript>Please enable JavaScript to view the experience and join the waitlist.</noscript></div>;
+  const concept = concepts[variant];
   return (
 <div className="landing">
 <a className="skip" href="#main">Skip to content</a>
@@ -108,7 +115,7 @@ export default function Landing() {
 </span>A NEW WAY TO SEE THE MUSEUM</p>
 <h1>Look closer.<br />The painting<br />is <em>the clue.</em>
 </h1>
-<p className="lede">Turn a museum visit into a story worth following. A phone-based adventure that starts with a role—and brings you back to the art.</p>
+<p className="lede">{concept.lede}</p>
 <a className="button" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>Explore a museum pilot <span aria-hidden="true">↗</span>
 </a>
 <a className="visitor-link" href="#join" data-audience="visitor" onClick={() => setAudience("visitor")}>Here as a visitor? Join the waitlist <span aria-hidden="true">→</span>
@@ -122,8 +129,8 @@ export default function Landing() {
 <div className="orbit orbit-two">
 </div>
 <span className="art-label">A LITTLE ADVENTURE.<br />A CLOSER LOOK.</span>
-<div className="phone hero-phone">
-<img src={basePath + "/images/explore.png"} alt="Detective mission preview: find Woman Holding a Balance and look closely at the balance." width="402" height="900" fetchPriority="high" />
+<div className="concept-hero">
+<img src={basePath + "/images/" + concept.image} alt={concept.alt} width="1448" height="1086" fetchPriority="high" />
 </div>
 <div className="floating-note">
 <span className="note-icon" aria-hidden="true">⌕</span>
@@ -138,9 +145,9 @@ export default function Landing() {
 <div className="principles">
 <span>Real artworks</span>
 <i>✧</i>
-<span>Four perspectives</span>
+<span>{variant === "worksheet" ? "Listen and discover" : "Four perspectives"}</span>
 <i>✧</i>
-<span>A story shaped by you</span>
+<span>{variant === "worksheet" ? "Discoveries to share" : "A story shaped by you"}</span>
 <i>✧</i>
 <span>A reason to look closer</span>
 </div>
@@ -148,46 +155,19 @@ export default function Landing() {
 <div className="section-heading">
 <div>
 <p className="eyebrow">01 / THE EXPERIENCE</p>
-<h2>Less scrolling.<br />More <em>seeing.</em>
-</h2>
+<h2>{concept.title}</h2>
 </div>
-<p>A missing detail. An unexpected discovery. A choice that changes the story. The next step is always in front of you, on the gallery wall.</p>
+<p>{concept.description}</p>
 </div>
 <div className="journey">
-<article>
-<div className="screen-stage sage">
-<img src={basePath + "/images/roles.png"} alt="Role selection: Detective, Collector, Artist, or Historical Figure." width="402" height="1224" loading="lazy" />
+{concept.steps.map((step, index) => <article key={step.title}>
+<div className="step-title"><span>{String(index + 1).padStart(2, '0')}</span><h3>{step.title}</h3></div>
+<p>{step.text}</p>
+</article>)}
 </div>
-<div className="step-title">
-<span>01</span>
-<h3>Step into a role</h3>
-</div>
-<p>Become a detective, collector, artist, or character from the past. Your perspective opens a different story.</p>
-</article>
-<article>
-<div className="screen-stage sand">
-<img src={basePath + "/images/investigate.png"} alt="A close-looking challenge asks what is in the pans of a painted balance." width="402" height="905" loading="lazy" />
-</div>
-<div className="step-title">
-<span>02</span>
-<h3>Let the art lead you</h3>
-</div>
-<p>Find the real painting. Notice the small details. Use what you see to uncover the next clue.</p>
-</article>
-<article>
-<div className="screen-stage moss">
-<img src={basePath + "/images/choose.png"} alt="A player chooses how a fictional letter ends after discovering clues in the painting." width="402" height="919" loading="lazy" />
-</div>
-<div className="step-title">
-<span>03</span>
-<h3>Make the story yours</h3>
-</div>
-<p>Choose what happens next. Compare discoveries. Leave with a story—and a new way of looking.</p>
-</article>
-</div>
-<p className="caption">Concept screens. The story is fictional; the close looking is real. Museum references are illustrative, not partnerships.</p>
+<p className="caption">Illustrative product concept. Museum and artwork references do not imply a partnership.</p>
 </section>
-<section className="roles-section">
+{variant !== 'worksheet' && <section className="roles-section">
 <div className="wrap roles-layout">
 <div>
 <p className="eyebrow">SAME GALLERY. DIFFERENT STORIES.</p>
@@ -232,10 +212,10 @@ export default function Landing() {
 <p id="role-story" className="role-story" aria-live="polite">{stories[role]}</p>
 </div>
 </div>
-</section>
+</section>}
 <section id="museums" className="section wrap museum-section">
-<div className="museum-visual">
-<img src={basePath + "/images/welcome.png"} alt="Beyond the Frame concept screen showing an artwork in a softly lit gallery." width="402" height="900" loading="lazy" />
+<div className="museum-visual concept-museum">
+<img src={basePath + "/images/" + concept.image} alt={concept.alt} width="1448" height="1086" loading="lazy" />
 <span className="visual-caption">A new invitation to an existing collection.</span>
 </div>
 <div className="museum-copy">
@@ -254,14 +234,14 @@ export default function Landing() {
 <span>02</span>
 <div>
 <h3>Give looking a purpose</h3>
-<p>Clues ask visitors to observe the real artwork. Choices give them something to discuss together.</p>
+<p>Clues ask visitors to observe the real artwork. Discoveries give them something to discuss together.</p>
 </div>
 </div>
 <div className="benefit">
 <span>03</span>
 <div>
 <h3>Start with a small pilot</h3>
-<p>Help shape an experience around a few artworks and a school-group visit. Scope and pricing will be discussed with interested teams.</p>
+<p>{concept.pilot} Scope and pricing will be discussed with interested teams.</p>
 </div>
 </div>
 <a className="text-link" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>Help shape the pilot <span aria-hidden="true">↗</span>
@@ -334,12 +314,12 @@ export default function Landing() {
 <option value="low">Not a priority</option>
 <option value="unknown">Unsure</option>
 </select>
-<label htmlFor="preference">Which would you prioritize?</label>
-<select id="preference" name="preference" required>
+<label htmlFor="interest">How interested are you in implementing this experience at your museum?</label>
+<select id="interest" name="interest" required>
 <option value="">Select one</option>
-<option value="layer">An interactive role-playing layer</option>
-<option value="audio">An audio guide</option>
-<option value="both">Both</option>
+<option value="very">Very interested</option>
+<option value="somewhat">Somewhat interested</option>
+<option value="not_now">Not currently interested</option>
 <option value="unsure">Unsure</option>
 </select>
 <label htmlFor="paid-pilot">Would you discuss a paid pilot?</label>
@@ -378,7 +358,7 @@ export default function Landing() {
 </details>
 <details>
 <summary>Does this replace our existing guide?</summary>
-<p>The proposed experience adds story-led missions to an existing exhibition. We want to learn how it could complement your current interpretation and education programming.</p>
+<p>The proposed experience adds guided discoveries to an existing exhibition. We want to learn how it could complement your current interpretation and education programming.</p>
 </details>
 <details>
 <summary>What would a pilot involve?</summary>
@@ -386,7 +366,7 @@ export default function Landing() {
 </details>
 <details>
 <summary>Do visitors need special equipment?</summary>
-<p>The concept is designed for phones. Device access, connectivity, shared use, and accessibility needs would be explored with each museum before a pilot.</p>
+<p>{concept.equipment}</p>
 </details>
 <details>
 <summary>Can I join if I don’t work at a museum?</summary>
@@ -409,6 +389,7 @@ export default function Landing() {
 <p className="eyebrow">PRIVACY &amp; DATA</p>
 <h2>Your curiosity.<br />Your choice.</h2>
 <p>We store the email and details you submit in Supabase to contact you about this early-stage project. Signup is for adults, including museum staff and educators; please don’t submit student details.</p>
+<p>We save a display preference in your browser to keep your experience consistent on return visits. We also save which experience you saw with your signup.</p>
 <p>If you allow analytics, a random ID saved in your browser helps us estimate unique visitors and understand which outreach links brought people here. It does not identify you until you submit a form, when we associate it with that signup. We don’t fingerprint your device.</p>
 <p>You can change your analytics choice below. Declining does not affect signup. To unsubscribe or request deletion, reply to any project email you receive. Before those emails begin, retain the private deletion code shown after signup and use it below.</p>
 <div className="privacy-actions">
