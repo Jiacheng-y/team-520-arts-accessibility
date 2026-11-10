@@ -6,6 +6,7 @@ import { read, consent, visitorId, firstAttribution, trackVisit } from '../src/a
 
 import { assignedVariant, experimentAttribution, type Variant } from '../src/experiment';
 import { concepts } from '../src/concepts';
+import { offers, type PricingVariant } from '../src/pricing';
 
 const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
 const stories: Record<string, string> = {
@@ -17,6 +18,7 @@ const stories: Record<string, string> = {
 
 export default function Landing() {
   const [variant, setVariant] = useState<Variant | null>(null);
+  const [pricing, setPricing] = useState<PricingVariant | null>(null);
   const [ready, setReady] = useState(false);
   const [audience, setAudience] = useState('museum');
   const [role, setRole] = useState('detective');
@@ -36,6 +38,7 @@ export default function Landing() {
 
   useEffect(() => {
     setVariant(assignedVariant());
+    setPricing(experimentAttribution().pricing_variant ?? null);
     setReady(true);
     setYear(String(new Date().getFullYear()));
     setBanner(read('analytics') === null && new URLSearchParams(location.search).get('internal') !== '1');
@@ -92,6 +95,7 @@ export default function Landing() {
   }
   if (!variant) return <div className="landing"><p className="wrap" role="status">Loading your experience…</p><noscript>Please enable JavaScript to view the experience and join the waitlist.</noscript></div>;
   const concept = concepts[variant];
+  const offer = pricing ? offers[pricing] : null;
   return (
 <div className="landing">
 <a className="skip" href="#main">Skip to content</a>
@@ -103,7 +107,7 @@ export default function Landing() {
 <nav aria-label="Main navigation">
 <a href="#experience">The experience</a>
 <a href="#museums">For museums</a>
-<a className="button small outline" href="#join">Join the pilot <span aria-hidden="true">↗</span>
+<a className="button small outline" href="#join">{offer ? "Museum inquiries" : "Join the pilot"} <span aria-hidden="true">↗</span>
 </a>
 </nav>
 </header>
@@ -116,7 +120,8 @@ export default function Landing() {
 <h1>Look closer.<br />The painting<br />is <em>the clue.</em>
 </h1>
 <p className="lede">{concept.lede}</p>
-<a className="button" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>Explore a museum pilot <span aria-hidden="true">↗</span>
+{offer && <div className="museum-offer"><p className="eyebrow">FOR MUSEUMS &amp; GALLERIES</p><h2>{offer.title}</h2><p>{offer.summary}</p></div>}
+<a className="button" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>{offer?.cta ?? "Explore a museum pilot"} <span aria-hidden="true">↗</span>
 </a>
 <a className="visitor-link" href="#join" data-audience="visitor" onClick={() => setAudience("visitor")}>Here as a visitor? Join the waitlist <span aria-hidden="true">→</span>
 </a>
@@ -245,10 +250,10 @@ export default function Landing() {
 <span>03</span>
 <div>
 <h3>Start with a small pilot</h3>
-<p>{concept.pilot} Scope and pricing will be discussed with interested teams.</p>
+<p>{concept.pilot} {offer?.detail ?? "Scope and pricing will be discussed with interested teams."}</p>
 </div>
 </div>
-<a className="text-link" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>Help shape the pilot <span aria-hidden="true">↗</span>
+<a className="text-link" href="#join" data-audience="museum" onClick={() => setAudience("museum")}>{offer?.cta ?? "Help shape the pilot"} <span aria-hidden="true">↗</span>
 </a>
 </div>
 </section>
@@ -267,19 +272,20 @@ export default function Landing() {
 <p className="eyebrow">03 / BE PART OF THE NEXT CHAPTER</p>
 <h2>A little curiosity.<br />A new <em>beginning.</em>
 </h2>
-<p className="lede">We’re inviting museum education teams to help shape Beyond the Frame. Leave your details to hear about a potential pilot.</p>
+<p className="lede">{offer?.summary ?? "We’re inviting museum education teams to help shape Beyond the Frame. Leave your details to hear about a potential pilot."}</p>
 <p className="muted">Visiting for yourself? You’re welcome on the waitlist, too.</p>
 <div className="pilot-note">
 <span aria-hidden="true">✧</span>
-<p>Early-stage concept. No commitment required.<br />We’ll contact you when there’s a next step.</p>
+<p>Early-stage concept. No commitment required.<br />{offer ? "Submitting an inquiry does not book a pilot or take payment." : "We’ll contact you when there’s a next step."}</p>
 </div>
 </div>
 <div className="form-card">
 <form id="signup-form" method="post" hidden={stage !== "signup"} onSubmit={submitSignup}>
-<h3>Let’s look closer, together.</h3>
+<h3>{offer ? "Tell us about your museum or gallery." : "Let’s look closer, together."}</h3>
+{offer && <p>{offer.detail}</p>}
 <label htmlFor="audience">I’m joining as</label>
 <select id="audience" name="audience" value={audience} onChange={event => setAudience(event.target.value)} disabled={busy}>
-<option value="museum">Museum staff</option>
+<option value="museum">Museum or gallery staff</option>
 <option value="educator">An educator</option>
 <option value="visitor">A museum visitor</option>
 <option value="other">Other</option>
@@ -287,8 +293,8 @@ export default function Landing() {
 <label htmlFor="email">Email address</label>
 <input id="email" name="email" type="email" autoComplete="email" placeholder="you@museum.org" maxLength={254} required />
 <div id="museum-fields" hidden={audience !== "museum"}>
-<label htmlFor="organization">Museum or organization</label>
-<input id="organization" name="organization" disabled={audience !== "museum"} autoComplete="organization" maxLength={160} required={audience === "museum"} placeholder="Your museum" />
+<label htmlFor="organization">Museum, gallery, or organization</label>
+<input id="organization" name="organization" disabled={audience !== "museum"} autoComplete="organization" maxLength={160} required={audience === "museum"} placeholder="Your museum or gallery" />
 <label htmlFor="job-role">Your role</label>
 <input id="job-role" name="role" disabled={audience !== "museum"} autoComplete="organization-title" maxLength={120} required={audience === "museum"} placeholder="e.g. Education coordinator" />
 </div>
@@ -300,14 +306,14 @@ export default function Landing() {
 <input name="consent" type="checkbox" required />
 <span>I agree to receive emails about Beyond the Frame and potential pilots. I can ask to unsubscribe at any time.</span>
 </label>
-<button className="button full" type="submit" disabled={!ready || busy}>{audience === "museum" ? "Join the pilot waitlist" : "Join the waitlist"} <span aria-hidden="true">↗</span>
+<button className="button full" type="submit" disabled={!ready || busy}>{audience === "museum" ? (offer?.cta ?? "Join the pilot waitlist") : "Join the waitlist"} <span aria-hidden="true">↗</span>
 </button>
 <p className="form-footnote">Just the next chapter. No noise. <button type="button" className="inline-button" data-open-privacy onClick={() => dialog.current?.showModal()}>Privacy details</button>
 </p>
 <p id="signup-status" className="status" role="status" aria-live="polite">{stage === "signup" ? status : ""}</p>
 </form>
 <form id="qualification-form" method="post" hidden={stage !== "qualify"} onSubmit={submitQualification}>
-<p className="eyebrow">YOU’RE ON THE LIST</p>
+<p className="eyebrow">{offer ? "INQUIRY RECEIVED" : "YOU’RE ON THE LIST"}</p>
 <h3>Help us understand your museum.</h3>
 <p>Three optional questions to shape a useful pilot.</p>
 <label htmlFor="challenge">How significant is school-group engagement as a challenge?</label>
@@ -326,7 +332,7 @@ export default function Landing() {
 <option value="not_now">Not currently interested</option>
 <option value="unsure">Unsure</option>
 </select>
-<label htmlFor="paid-pilot">Would you discuss a paid pilot?</label>
+<label htmlFor="paid-pilot">{pricing === "pilot" ? "Would your museum or gallery discuss paying $1,000 to set up a 30-day exhibition pilot at your venue?" : "Would you discuss a paid pilot?"}</label>
 <select id="paid-pilot" name="paid_pilot" required>
 <option value="">Select one</option>
 <option value="yes">Yes, I’m interested</option>
@@ -345,7 +351,7 @@ export default function Landing() {
 <div id="thank-you" ref={thankYou} tabIndex={-1} hidden={stage !== "done"}>
 <span className="success-symbol" aria-hidden="true">✓</span>
 <h3>You’re part of the story.</h3>
-<p>Thanks for your curiosity. We’ll be in touch about the next chapter.</p>
+<p>{offer && audience === "museum" ? "Thanks for your inquiry. We’ll follow up to discuss your museum or gallery’s exhibition and next steps. No booking or payment has been made." : "Thanks for your curiosity. We’ll be in touch about the next chapter."}</p>
 </div>{receipt && <p className="receipt">For a new signup, keep this private deletion code to remove it in Privacy &amp; data. Already registered? Keep your original code; this new code cannot change an existing signup: {receipt}</p>}</div>
 </section>
 <section className="faq wrap">
@@ -366,7 +372,7 @@ export default function Landing() {
 </details>
 <details>
 <summary>What would a pilot involve?</summary>
-<p>We’d discuss a small selection of artworks, the needs of your school groups, and how to evaluate engagement together. Scope, timing, and pricing would be agreed before any commitment.</p>
+<p>We’d discuss a small selection of artworks, the needs of your school groups, and how to evaluate engagement together. {offer?.detail ?? "Scope, timing, and pricing would be agreed before any commitment."}</p>
 </details>
 <details>
 <summary>Do visitors need special equipment?</summary>

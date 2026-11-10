@@ -8,6 +8,8 @@ export type Submission = {
     kind: string;
     experiment?: string;
     variant?: string;
+    pricing_experiment?: string;
+    pricing_variant?: string;
     interest?: string;
     email?: string;
     audience?: string;
@@ -54,13 +56,16 @@ export function parseSubmission(input: unknown): Submission {
         return { kind, receipt: id(x.receipt), challenge: choice(x.challenge, ['high', 'medium', 'low', 'unknown']), ...(x.interest !== undefined ? {interest: choice(x.interest, ['very', 'somewhat', 'not_now', 'unsure'])} : {preference: choice(x.preference, ['layer', 'audio', 'both', 'unsure'])}), paid_pilot: choice(x.paid_pilot, ['yes', 'maybe', 'no']), budget: text(x.budget, 1000), attribution };
     const assignment = x.experiment !== undefined || x.variant !== undefined
         ? {experiment: choice(x.experiment, ['product-format-v1']), variant: choice(x.variant, ['worksheet', 'mobile', 'device'])} : {};
+    const pricing = x.pricing_experiment !== undefined || x.pricing_variant !== undefined
+        ? {pricing_experiment: choice(x.pricing_experiment, ['museum-pricing-v1']), pricing_variant: choice(x.pricing_variant, ['inquiry', 'pilot'])} : {};
+    if (pricing.pricing_experiment && !['mobile', 'device'].includes(assignment.variant || '')) throw new Error('Invalid pricing concept');
     if (kind === 'visit')
-        return { kind, ...assignment, visitor_id: id(x.visitor_id), event_id: id(x.event_id), attribution };
+        return { kind, ...assignment, ...pricing, visitor_id: id(x.visitor_id), event_id: id(x.event_id), attribution };
     const email = text(x.email, 254, true).toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
         throw new Error('Invalid email');
     if (x.consent !== true)
         throw new Error('Consent required');
     const audience = choice(x.audience, ['museum', 'educator', 'visitor', 'other']);
-    return { kind, ...assignment, receipt: id(x.receipt), email, audience, organization: text(x.organization, 160, audience === 'museum'), role: text(x.role, 120, audience === 'museum'), consent: true, website: text(x.website, 500), visitor_id: x.visitor_id ? id(x.visitor_id) : null, attribution };
+    return { kind, ...assignment, ...pricing, receipt: id(x.receipt), email, audience, organization: text(x.organization, 160, audience === 'museum'), role: text(x.role, 120, audience === 'museum'), consent: true, website: text(x.website, 500), visitor_id: x.visitor_id ? id(x.visitor_id) : null, attribution };
 }

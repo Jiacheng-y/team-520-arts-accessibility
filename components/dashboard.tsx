@@ -5,7 +5,10 @@ import { supabase, errorMessage } from '../src/client';
 
 import { ExperimentResults, type ExperimentResult } from './experiment-results';
 
+import { PricingResults, type PricingResult } from './pricing-results';
+
 type Metrics = {
+  pricing?: PricingResult[];
   experiments?: ExperimentResult[];
   signups: number; visitors: number; museums: number; paid: number; converted: number; unattributed: number;
   audiences: Record<string, number>; preferences: Record<string, number>;
@@ -183,6 +186,7 @@ export default function Dashboard() {
 </form>
 <p id="metrics-status" role="status" className="status">{metricsStatus}</p>
 <ExperimentResults results={metrics?.experiments} totalSignups={metrics?.signups ?? 0} />
+<PricingResults results={metrics?.pricing} />
 <h2 className="overall-heading">Overall results</h2>
 <p className="muted">All signups and tracked visits for the selected filters, including earlier traffic without an assigned concept.</p>
 <div className="metric-grid">

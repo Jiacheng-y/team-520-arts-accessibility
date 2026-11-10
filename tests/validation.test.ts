@@ -21,3 +21,16 @@ test('experiment qualification asks interest in the assigned concept without com
   assert.equal(parseSubmission(response).interest, 'very');
   assert.throws(() => parseSubmission({...response, interest: 'invalid'}));
 });
+test('pricing attribution accepts both offers on mobile and device only', () => {
+  for (const variant of ['mobile', 'device']) for (const pricing_variant of ['inquiry', 'pilot']) {
+    const fields = {experiment: 'product-format-v1', variant, pricing_experiment: 'museum-pricing-v1', pricing_variant};
+    assert.equal(parseSubmission({...valid, ...fields}).pricing_variant, pricing_variant);
+    assert.equal(parseSubmission({kind: 'visit', event_id: valid.receipt, visitor_id: valid.receipt, ...fields}).pricing_experiment, 'museum-pricing-v1');
+  }
+  for (const fields of [
+    {variant: 'worksheet', pricing_experiment: 'museum-pricing-v1', pricing_variant: 'pilot'},
+    {variant: 'mobile', pricing_experiment: 'museum-pricing-v1'},
+    {variant: 'device', pricing_variant: 'pilot'},
+    {variant: 'mobile', pricing_experiment: 'museum-pricing-v1', pricing_variant: 'free'},
+  ]) assert.throws(() => parseSubmission({...valid, experiment: 'product-format-v1', ...fields}));
+});

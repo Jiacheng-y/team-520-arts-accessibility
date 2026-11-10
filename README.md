@@ -125,3 +125,32 @@ The dashboard's **Interest by concept** table separates museum staff, visitors, 
 4. Run `supabase/tests/security.sql` and `supabase/tests/experiment.sql` against a test project, then smoke-test one consented visit and signup for each concept.
 
 For local QA, set `localStorage.setItem('btf:product-format-v1', 'worksheet')` (or `mobile` / `device`) in browser developer tools and reload `?internal=1`. This suppresses analytics visits, not signup submissions; use a test backend. Remove that storage key to test random assignment. There are no variant URLs for ordinary visitors to discover.
+
+## Museum pricing A/B test
+
+Mobile and museum handheld concepts now also participate in `museum-pricing-v1`:
+
+- **A (`inquiry`):** submit the museum form to discuss collaboration and receive a quotation.
+- **B (`pilot`):** $1,000 for a 30-day exhibition pilot, with an inquiry form. No payment or booking is taken.
+
+On `/`, each mobile/handheld browser is independently assigned an offer with 50/50 probability. The offer persists under `btf:museum-pricing-v1`; blocked storage retains it only for the page session. Worksheet visitors remain outside the pricing test. The original concept assignment remains unchanged. Compare A and B **within each concept**.
+
+Direct outreach/QA pages (prepend your deployment base path):
+
+| Concept | A: inquiry & quotation | B: $1,000 / 30 days |
+| --- | --- | --- |
+| Mobile | `/museums/mobile/inquiry/` | `/museums/mobile/pilot/` |
+| Museum handheld | `/museums/device/inquiry/` | `/museums/device/pilot/` |
+
+Direct links override the displayed assignment for that page without replacing the browser's random assignment. Visits and signups record the offer actually shown. Use distinct `utm_campaign` values for direct outreach versus randomized root traffic; mixing these can bias the comparison. `?internal=1` suppresses analytics, not form submissions.
+
+Both offers use the same layout and required email, museum, role, and contact consent fields, followed by the existing optional qualification step. B repeats the stated price in its paid-pilot question. The dashboard adds a comparison of museum inquiries, paid-pilot interest, tracked browsers, and matched museum conversion for all four combinations. Visits remain opt-in. Conversion uses all consenting browsers in each cell as its denominator, since audience is unknown before submission. A submission expresses interest, not acceptance of a contract or a purchase. Existing duplicate-email protection preserves the original signup and offer; historical records remain outside this experiment.
+
+Before deploying the frontend:
+
+1. Apply `supabase/migrations/202611100001_museum_pricing.sql` after the two existing migrations.
+2. Redeploy the `collect` Edge Function and its shared validation module.
+3. Run `supabase/tests/pricing.sql`, `experiment.sql`, and `security.sql` in a disposable test project, then verify real submissions.
+4. Build and deploy the static frontend using the existing GitHub Pages workflow.
+
+Without configured Supabase, the forms show the existing unavailable-backend message and never claim to save an inquiry.
