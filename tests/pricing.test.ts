@@ -15,7 +15,7 @@ test('pricing splits evenly and persists independently of the concept', () => {
 });
 test('direct museum URLs select only valid combinations, including under a base path', () => {
   for (const variant of ['mobile', 'device']) for (const pricing_variant of ['inquiry', 'pilot']) {
-    assert.deepEqual(directAssignment(`/team-520-arts-accessibility/museums/${variant}/${pricing_variant}/`), {variant, pricing_variant});
+    assert.deepEqual(directAssignment(`/rpg-landing-page/museums/${variant}/${pricing_variant}/`), {variant, pricing_variant});
   }
   assert.equal(directAssignment('/'), null);
   assert.equal(directAssignment('/museums/worksheet/pilot/'), null);

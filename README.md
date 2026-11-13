@@ -25,7 +25,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.e
    supabase login
    supabase link --project-ref YOUR_PROJECT_REF
    supabase db push --remote
-   supabase secrets set ALLOWED_ORIGINS=https://YOUR_OWNER.github.io,http://127.0.0.1:3000,http://127.0.0.1:4173
+   supabase secrets set ALLOWED_ORIGINS=https://team-520-access-to-arts.github.io,http://127.0.0.1:3000,http://127.0.0.1:4173
    supabase secrets set RATE_LIMIT_SALT=YOUR_LONG_RANDOM_SECRET
    supabase functions deploy collect --no-verify-jwt --use-api
    ```
@@ -46,11 +46,15 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.e
 
 1. Repository **Settings → Pages**: choose **GitHub Actions**.
 2. **Settings → Secrets and variables → Actions → Variables**: set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. These are public configuration, not privileged secrets.
-3. Add the production origin to Supabase `ALLOWED_ORIGINS`.
+3. In the Supabase project hosting `collect`, set the Edge Function secret `ALLOWED_ORIGINS` to `https://team-520-access-to-arts.github.io`. Preserve any other required origins as comma-separated values. Do not include the repository path or a trailing slash. For a custom domain, use that domain's origin instead. Updating this secret takes effect without redeploying the function.
 4. Review and merge/push the feature branch to `main`; run the deployment workflow.
 5. Open both URLs directly:
-   - `https://YOUR_OWNER.github.io/team-520-arts-accessibility/`
-   - `https://YOUR_OWNER.github.io/team-520-arts-accessibility/dashboard/`
+   - `https://team-520-access-to-arts.github.io/rpg-landing-page/`
+   - `https://team-520-access-to-arts.github.io/rpg-landing-page/dashboard/`
+
+The workflow derives `NEXT_PUBLIC_BASE_PATH` from the current repository name, so rerun **Deploy GitHub Pages** after a repository rename or transfer. Verify the repository Actions variables still point to the Supabase project hosting `collect`. The GitHub workflow deploys the frontend only; it does not update Supabase secrets or deploy Edge Functions.
+
+To verify CORS after an ownership change, inspect the browser Network tab for the `OPTIONS` request to `/functions/v1/collect`. It should return `204` with `Access-Control-Allow-Origin: https://team-520-access-to-arts.github.io` when visiting the default Pages domain. A `403` with `Origin not allowed` indicates that the request origin is missing from `ALLOWED_ORIGINS`.
 
 The landing page has no dashboard link. Its static login shell is public; server-side authorization protects the data. `noindex` is not a security boundary. For a custom domain or owner-level Pages repository, change workflow `NEXT_PUBLIC_BASE_PATH` to an empty string and update allowed origins.
 
@@ -75,8 +79,8 @@ No emails are automatically sent. Before outreach, establish a monitored reply a
 
 ```sh
 npm test
-NEXT_PUBLIC_BASE_PATH=/team-520-arts-accessibility npm run build
-NEXT_PUBLIC_BASE_PATH=/team-520-arts-accessibility npm run test:e2e
+NEXT_PUBLIC_BASE_PATH=/rpg-landing-page npm run build
+NEXT_PUBLIC_BASE_PATH=/rpg-landing-page npm run test:e2e
 ```
 
 Browser tests use installed Google Chrome by default (set `PLAYWRIGHT_CHANNEL=chromium` to use a separately installed Playwright Chromium). They cover the desktop landing page and desktop/mobile dashboard against the actual static export with an unconfigured backend; leave Supabase variables empty in `.env` for these tests. They cover layout, image loading, roles, audience requirements, unavailable-backend behavior, consent, and a locked dashboard. Before public deployment, run `supabase/tests/security.sql` in a test project and smoke-test real Auth + Edge Function + database behavior. Live Supabase verification requires project credentials.
@@ -95,7 +99,7 @@ The landing page uses a desktop layout with a 1200px minimum width and a desktop
 
 Routes are defined in `app/page.tsx` and `app/dashboard/page.tsx`; React interactions live in `components/landing.tsx` and `components/dashboard.tsx`. The desktop landing design and separate dashboard URL are preserved.
 
-`NEXT_PUBLIC_BASE_PATH` is empty for local development and `/team-520-arts-accessibility` for this repository's Pages deployment. Set the same value when building and running the static preview. The public image URLs explicitly include that path. `npm run preview` serves `out/`, not a development server.
+`NEXT_PUBLIC_BASE_PATH` is empty for local development and `/rpg-landing-page` for this repository's Pages deployment. Set the same value when building and running the static preview. The public image URLs explicitly include that path. `npm run preview` serves `out/`, not a development server.
 
 For existing deployments, GitHub Actions accepts the old `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` repository variables as fallbacks. New `NEXT_PUBLIC_*` variables take precedence. Local `.env` files must use the new names. Never store service-role keys in either set of public variables.
 
